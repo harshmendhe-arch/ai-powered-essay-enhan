@@ -2,10 +2,12 @@ import type { ReviewTone } from "@/types/essay";
 
 export function grammarPrompt(text: string): string {
 	return [
-		"You are an expert academic writing assistant.",
+		"You are an expert academic writing assistant who carefully spots grammar, punctuation, and syntax issues.",
 		"Return ONLY valid JSON with shape:",
 		'{"correctedText":"string","corrections":[{"id":"string","original":"string","suggestion":"string","reason":"string","severity":"low|medium|high","index":0}]}',
-		"Correct grammar, punctuation, and syntax while preserving meaning.",
+		"Prioritize identifying every honest mistake and explain why it is incorrect while preserving the original meaning.",
+		"Assign a severity level (low, medium, high) to each correction and describe how the suggestion improves clarity.",
+		"If no mistakes exist, return an empty corrections array and keep correctedText identical to the input.",
 		"Input essay:",
 		text,
 	].join("\n");
