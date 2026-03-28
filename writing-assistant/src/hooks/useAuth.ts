@@ -32,12 +32,15 @@ export function useAuth(): UseAuthReturn {
       return;
     }
 
+    // auth is guaranteed non-null here because isFirebaseInitialized() returned true
+    const firebaseAuth = auth!;
+
     // Set persistence before listening to auth state
-    setPersistence(auth, browserLocalPersistence).catch(() => {
+    setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {
       // Persistence might fail in some environments
     });
 
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
       setError(null);
@@ -48,6 +51,11 @@ export function useAuth(): UseAuthReturn {
 
   const login = async (email: string, password: string) => {
     setError(null);
+    if (!auth) {
+      const message = "Firebase is not initialized";
+      setError(message);
+      throw new Error(message);
+    }
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
@@ -59,6 +67,11 @@ export function useAuth(): UseAuthReturn {
 
   const register = async (email: string, password: string) => {
     setError(null);
+    if (!auth) {
+      const message = "Firebase is not initialized";
+      setError(message);
+      throw new Error(message);
+    }
     try {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (err) {
@@ -70,6 +83,11 @@ export function useAuth(): UseAuthReturn {
 
   const logout = async () => {
     setError(null);
+    if (!auth) {
+      const message = "Firebase is not initialized";
+      setError(message);
+      throw new Error(message);
+    }
     try {
       await signOut(auth);
     } catch (err) {
