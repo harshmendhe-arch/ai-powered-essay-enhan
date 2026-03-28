@@ -2,7 +2,9 @@ import type { EnhancementResult } from "./enhancement";
 import type { GrammarResult } from "./grammar";
 import type { VocabularyResult } from "./vocabulary";
 
-export type ReviewTone = "academic" | "formal" | "casual";
+export type ReviewTone = "academic" | "formal" | "casual" | "technical" | "literary";
+
+export type StudentDiscipline = "general" | "engineering" | "literature";
 
 export interface EssayReviewRequest {
 	text: string;

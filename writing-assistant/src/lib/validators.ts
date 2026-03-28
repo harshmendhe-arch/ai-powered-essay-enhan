@@ -16,7 +16,7 @@ export function validateEssayPayload(payload: unknown): payload is EssayReviewRe
 
 	if (
 		maybePayload.tone &&
-		!["academic", "formal", "casual"].includes(maybePayload.tone)
+		!["academic", "formal", "casual", "technical", "literary"].includes(maybePayload.tone)
 	) {
 		return false;
 	}

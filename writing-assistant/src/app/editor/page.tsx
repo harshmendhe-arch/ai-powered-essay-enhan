@@ -12,18 +12,43 @@ import EnhancedOutput from "@/components/enhancement/EnhancedOutput";
 import WordSuggestionPanel from "@/components/vocabulary/WordSuggestionPanel";
 import { estimateReadability } from "@/lib/readability";
 import type { FullReviewApiResponse } from "@/types/api";
-import type { EssayReviewResponse } from "@/types/essay";
+import type { EssayReviewResponse, ReviewTone, StudentDiscipline } from "@/types/essay";
 
 const starterEssay =
   "Students today need strong writing skills to communicate complex ideas clearly. However, many essays lose impact because of grammar mistakes, repetitive vocabulary, and unclear sentence flow.";
 
 const MODEL_STORAGE_KEY = "selected_ollama_model";
+const DISCIPLINE_STORAGE_KEY = "selected_student_discipline";
 
 interface ModelsResponse {
   models: string[];
   defaultModel: string;
   message?: string;
 }
+
+const disciplineOptions: { value: StudentDiscipline; label: string; icon: string; tone: ReviewTone; hint: string }[] = [
+  {
+    value: "general",
+    label: "General Academic",
+    icon: "🎓",
+    tone: "academic",
+    hint: "Formal university essays and reports",
+  },
+  {
+    value: "engineering",
+    label: "Engineering & STEM",
+    icon: "⚙️",
+    tone: "technical",
+    hint: "Technical precision for STEM writing",
+  },
+  {
+    value: "literature",
+    label: "Literature & Humanities",
+    icon: "📖",
+    tone: "literary",
+    hint: "Expressive literary and critical writing",
+  },
+];
 
 export default function EditorPage() {
   const [essay, setEssay] = useState(starterEssay);
@@ -33,8 +58,11 @@ export default function EditorPage() {
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [modelStatus, setModelStatus] = useState<string>("Loading models...");
+  const [discipline, setDiscipline] = useState<StudentDiscipline>("general");
 
   const readability = useMemo(() => estimateReadability(essay), [essay]);
+
+  const selectedTone = disciplineOptions.find((d) => d.value === discipline)?.tone ?? "academic";
 
   useEffect(() => {
     let mounted = true;
@@ -70,6 +98,14 @@ export default function EditorPage() {
             ? `${uniqueModels.length} model(s) available`
             : payload.message ?? "No local models found"
         );
+
+        const storedDiscipline =
+          typeof window !== "undefined"
+            ? (window.localStorage.getItem(DISCIPLINE_STORAGE_KEY) as string | null)
+            : null;
+        if (storedDiscipline && disciplineOptions.some((d) => d.value === storedDiscipline)) {
+          setDiscipline(storedDiscipline as StudentDiscipline);
+        }
       } catch (loadError) {
         if (!mounted) {
           return;
@@ -97,6 +133,12 @@ export default function EditorPage() {
     }
   }, [selectedModel]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(DISCIPLINE_STORAGE_KEY, discipline);
+    }
+  }, [discipline]);
+
   async function runReview() {
     setLoading(true);
     setError(null);
@@ -106,7 +148,7 @@ export default function EditorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: essay,
-          tone: "academic",
+          tone: selectedTone,
           model: selectedModel || undefined,
         }),
       });
@@ -190,6 +232,33 @@ export default function EditorPage() {
             sentence flow, and stronger vocabulary with a student-friendly comparison.
           </p>
 
+          {/* Student discipline selector */}
+          <div className="mt-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Your discipline
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {disciplineOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setDiscipline(opt.value)}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                    discipline === opt.value
+                      ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>{opt.icon}</span>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-slate-400">
+              {disciplineOptions.find((d) => d.value === discipline)?.hint}
+            </p>
+          </div>
+
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
               {modelStatus}
@@ -233,7 +302,7 @@ export default function EditorPage() {
               {loading ? "Reviewing with Ollama..." : "Run Full Review"}
             </button>
             <span className="text-xs text-slate-500">
-              Grammar to enhancement to vocabulary pipeline
+              Grammar → enhancement → vocabulary pipeline
             </span>
           </div>
 
